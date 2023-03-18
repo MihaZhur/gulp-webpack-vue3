@@ -1,0 +1,13 @@
+{
+  "presets": [
+    [
+      "@babel/preset-env",
+      {
+        "loose": true
+      }
+    ] 
+  ],
+  "plugins": [
+    ["module:fast-async", { "spec": true }]
+  ]
+}
