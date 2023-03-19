@@ -40,7 +40,7 @@ const path = {
     html: distPath + "/",
     css: `${distPath}/assets/css`,
     js: `${distPath}/assets/js`,
-    images: `${distPath}/assets/img`,
+    images: `${distPath}/assets/images`,
     fonts: `${distPath}/assets/fonts`,
   },
   src: {

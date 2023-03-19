@@ -1,9 +1,9 @@
 <template>
-  <div class="">
-    <button @click="inc">
-      count {{ count }}
-  </button>
-  </div>
+
+    <button class="button" @click="inc">
+      click {{ count }}
+    </button>
+
 </template>
 <script>
 
@@ -11,7 +11,7 @@ import { ref } from 'vue';
 export default {
   name: 'App',
   setup() {
-    let count = ref(1)
+    let count = ref(0)
     const inc = () => count.value++
 
     return {
