@@ -6,6 +6,7 @@ const cssbeautify = require("gulp-cssbeautify");
 const removeComments = require("gulp-strip-css-comments");
 const rename = require("gulp-rename");
 const sass = require("gulp-sass")(require("sass"));
+const concat = require("gulp-concat");
 const cssnano = require("gulp-cssnano");
 const plumber = require("gulp-plumber");
 const imagemin = require("gulp-imagemin");
@@ -40,25 +41,25 @@ const path = {
     html: distPath + "/",
     css: `${distPath}/assets/css`,
     js: `${distPath}/assets/js`,
-    images: `${distPath}/assets/images`,
+    img: `${distPath}/assets/img`,
     fonts: `${distPath}/assets/fonts`,
   },
   src: {
     html: srcPath + "*.html",
     css: srcPath + "assets/scss/**/*.scss",
     js: srcPath + "assets/js/**/*.js",
-    images:
+    img:
       srcPath +
-      "assets/images/**/*.{jpg,webp,png,jpeg,webmanifest,xml,gif,ico,json,svg}",
-    fonts: srcPath + "assets/fonts/**/*.{woff,woff2,eot,ttf)",
+      "assets/img/**/*.{jpg,webp,png,jpeg,webmanifest,xml,gif,ico,json,svg}",
+    fonts: srcPath + "assets/fonts/**/*.{woff,woff2,eot,ttf}",
   },
   watch: {
     html: srcPath + "**/*.html",
     css: srcPath + "assets/scss/**/*.scss",
     js: srcPath + "assets/js/**/*.{js,vue}",
-    images:
+    img:
       srcPath +
-      "assets/images/**/*.{jpg,webp,png,jpeg,webmanifest,xml,gif,ico,json}",
+      "assets/img/**/*.{jpg,webp,png,jpeg,webmanifest,xml,gif,ico,json}",
     fonts: srcPath + "assets/fonts/**/*.{woff,woff2,eot,ttf,svg}",
   },
   clean: "./" + distPath + "/",
@@ -72,6 +73,7 @@ const serve = () => {
     },
   });
 };
+
 const html = () => {
   return src(path.src.html, { base: srcPath })
     .pipe(plumber())
@@ -83,22 +85,11 @@ const html = () => {
     .pipe(dest(path.dist.html))
     .pipe(browserSync.reload({ stream: true }));
 };
+
 const css = () => {
   return src(path.src.css, { base: srcPath + "assets/scss/" })
-    .pipe(
-      plumber({
-        errorHandler: function (err) {
-          notify.onError({
-            title: "SCSS Error",
-            message: "Error <%= error.message %>",
-          })(err);
-          this.emit("end");
-        },
-      })
-    )
-    .pipe(sass())
-    .pipe(autoprefixer())
-    .pipe(cssbeautify())
+    .pipe(sass()) // Компилируем SASS/SCSS в CSS
+    .pipe(concat("styles.css")) // Объединяем все стилевые файлы в один (styles.css)
     .pipe(dest(path.dist.css))
     .pipe(
       cssnano({
@@ -118,6 +109,7 @@ const css = () => {
     .pipe(dest(path.dist.css))
     .pipe(browserSync.reload({ stream: true }));
 };
+
 const js = () => {
   return src("src/assets/js/**/*.{js,vue}")
     .pipe(
@@ -135,37 +127,52 @@ const js = () => {
     .pipe(dest(path.dist.js))
     .pipe(browserSync.reload({ stream: true }));
 };
-const images = () => {
-  return src(path.src.images, { base: srcPath + "assets/images/" })
-    // .pipe(
-    //   imagemin([
-    //     imagemin.gifsicle({ interlaced: true }),
-    //     imagemin.mozjpeg({ quality: 75, progressive: true }),
-    //     imagemin.optipng({ optimizationLevel: 5 }),
-    //     imagemin.svgo({
-    //       plugins: [{ removeViewBox: true }, { cleanupIDs: false }],
-    //     }),
-    //   ])
-    // )
-    .pipe(dest(path.dist.images))
+
+const img = () => {
+  return src(path.src.img, { base: srcPath + "assets/img/" })
+    .pipe(dest(path.dist.img))
     .pipe(browserSync.reload({ stream: true }));
 };
+
+
+const optimizeImages = () => {
+  return src(path.src.img, { base: srcPath + "assets/img/" })
+    .pipe(
+      imagemin([
+        imagemin.gifsicle({ interlaced: true }),
+        imagemin.mozjpeg({ quality: 75, progressive: true }),
+        imagemin.optipng({ optimizationLevel: 5 }),
+        imagemin.svgo({
+          plugins: [{ removeViewBox: true }, { cleanupIDs: false }],
+        }),
+      ])
+    )
+    .pipe(dest(path.dist.img))
+    .pipe(browserSync.reload({ stream: true }));
+};
+
+const fonts = () => {
+  return src(path.src.fonts, { base: srcPath + "assets/fonts/" })
+    .pipe(dest(path.dist.fonts))
+    .pipe(browserSync.reload({ stream: true }));
+};
+
 const clean = () => {
   return del(path.clean);
 };
-const fonts = () => {
-  return src(path.src.fonts, { base: srcPath + "assets/fonts/" }).pipe(
-    browserSync.reload({ stream: true })
-  );
-};
+
+
 const watchFiles = () => {
   gulp.watch(path.watch.html, html);
   gulp.watch(path.watch.css, css);
   gulp.watch(path.watch.js, js);
-  gulp.watch(path.watch.images, images);
+  gulp.watch(path.watch.img, img);
   gulp.watch(path.watch.fonts, fonts);
 };
-const build = gulp.series(clean, gulp.parallel(html, css, js, images, fonts));
+const tasks = [html, css, js, fonts, optimizeImages]
+
+const build = gulp.series(clean, gulp.parallel(...tasks));
+
 const watch = gulp.parallel(build, watchFiles, serve);
 
 //tasks
